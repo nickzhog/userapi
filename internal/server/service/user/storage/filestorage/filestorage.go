@@ -51,7 +51,7 @@ func (r *repository) Create(ctx context.Context, usr *user.User) error {
 	return r.saveUsersToFile()
 }
 
-func (r *repository) Update(ctx context.Context, id string, usr user.User) error {
+func (r *repository) Update(ctx context.Context, id string, usr *user.User) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -63,7 +63,7 @@ func (r *repository) Update(ctx context.Context, id string, usr user.User) error
 	usr.ID = id
 	usr.CreatedAt = old.CreatedAt
 
-	r.list[id] = usr
+	r.list[id] = *usr
 
 	return r.saveUsersToFile()
 }

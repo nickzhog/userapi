@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/nickzhog/userapi/internal/server/repositories"
@@ -36,26 +37,47 @@ func (h *handler) GetRouteGroup() func(r chi.Router) {
 	}
 }
 
+type UserRequest struct {
+	DisplayName string `json:"display_name"`
+	Email       string `json:"email"`
+}
+
+type UserResponse struct {
+	ID          string    `json:"id"`
+	CreatedAt   time.Time `json:"created_at"`
+	DisplayName string    `json:"display_name"`
+	Email       string    `json:"email"`
+}
+
+func (ur *UserResponse) Parse(usr user.User) {
+	ur.ID = usr.ID
+	ur.CreatedAt = usr.CreatedAt
+	ur.DisplayName = usr.DisplayName
+	ur.Email = usr.Email
+}
+
 func (h *handler) searchUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.Repositories.User.FindAll(r.Context())
 	if err != nil {
 		h.logger.Error(err)
 		ErrInternalError(err).Render(w, r)
 	}
-	err = json.NewEncoder(w).Encode(users)
+
+	var response []UserResponse
+	for _, usr := range users {
+		var elem UserResponse
+		elem.Parse(usr)
+		response = append(response, elem)
+	}
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		h.logger.Error(err)
 		ErrInternalError(err).Render(w, r)
 	}
 }
 
-type CreateUserRequest struct {
-	DisplayName string `json:"display_name"`
-	Email       string `json:"email"`
-}
-
 func (h *handler) createUser(w http.ResponseWriter, r *http.Request) {
-	var createRequest CreateUserRequest
+	var createRequest UserRequest
 	err := json.NewDecoder(r.Body).Decode(&createRequest)
 	if err != nil {
 		h.logger.Error(err)
@@ -69,6 +91,15 @@ func (h *handler) createUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.Repositories.User.Create(r.Context(), &usr)
+	if err != nil {
+		h.logger.Error(err)
+		ErrInternalError(err).Render(w, r)
+	}
+
+	var response UserResponse
+	response.Parse(usr)
+
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		h.logger.Error(err)
 		ErrInternalError(err).Render(w, r)
@@ -87,7 +118,9 @@ func (h *handler) getUser(w http.ResponseWriter, r *http.Request) {
 		ErrInvalidRequest(err).Render(w, r)
 	}
 
-	err = json.NewEncoder(w).Encode(usr)
+	var response UserResponse
+	response.Parse(usr)
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		h.logger.Error(err)
 		ErrInternalError(err).Render(w, r)
@@ -104,7 +137,7 @@ func (h *handler) updateUser(w http.ResponseWriter, r *http.Request) {
 		ErrInvalidRequest(err).Render(w, r)
 	}
 
-	err = h.Repositories.User.Update(r.Context(), id, usr)
+	err = h.Repositories.User.Update(r.Context(), id, &usr)
 	if err != nil {
 		if errors.Is(err, user.ErrNotFound) {
 			ErrUserNotFound(err).Render(w, r)
@@ -112,6 +145,14 @@ func (h *handler) updateUser(w http.ResponseWriter, r *http.Request) {
 		}
 		h.logger.Error(err)
 		ErrInvalidRequest(err).Render(w, r)
+	}
+
+	var response UserResponse
+	response.Parse(usr)
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		h.logger.Error(err)
+		ErrInternalError(err).Render(w, r)
 	}
 }
 
