@@ -56,6 +56,14 @@ func (ur *UserResponse) Parse(usr user.User) {
 	ur.Email = usr.Email
 }
 
+// @summary Поиск пользователей
+// @description Поиск всех пользователей в системе
+// @tags users
+// @produce json
+// @success 200 {array} UserResponse
+// @failure 400 {string} string "Неверный запрос"
+// @failure 500 {string} string "Внутренняя ошибка сервера"
+// @router /v1/users [get]
 func (h *handler) searchUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.Repositories.User.FindAll(r.Context())
 	if err != nil {
@@ -76,6 +84,16 @@ func (h *handler) searchUsers(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @summary Создание пользователя
+// @description Создание нового пользователя в системе
+// @tags users
+// @accept json
+// @produce json
+// @param request body UserRequest true "Данные пользователя"
+// @success 200 {object} UserResponse
+// @failure 400 {string} string "Неверный запрос"
+// @failure 500 {string} string "Внутренняя ошибка сервера"
+// @router /v1/users [post]
 func (h *handler) createUser(w http.ResponseWriter, r *http.Request) {
 	var createRequest UserRequest
 	err := json.NewDecoder(r.Body).Decode(&createRequest)
@@ -106,6 +124,16 @@ func (h *handler) createUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @summary Получение пользователя
+// @description Получение информации о пользователе по его идентификатору
+// @tags users
+// @produce json
+// @param id path string true "Идентификатор пользователя"
+// @success 200 {object} UserResponse
+// @failure 400 {string} string "Неверный запрос"
+// @failure 404 {string} string "Пользователь не найден"
+// @failure 500 {string} string "Внутренняя ошибка сервера"
+// @router /v1/users/{id} [get]
 func (h *handler) getUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	usr, err := h.Repositories.User.FindOne(r.Context(), id)
@@ -127,6 +155,18 @@ func (h *handler) getUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @summary Обновление пользователя
+// @description Обновление информации о пользователе по его идентификатору
+// @tags users
+// @accept json
+// @produce json
+// @param id path string true "Идентификатор пользователя"
+// @param request body UserRequest true "Данные пользователя"
+// @success 200 {object} UserResponse
+// @failure 400 {string} string "Неверный запрос"
+// @failure 404 {string} string "Пользователь не найден"
+// @failure 500 {string} string "Внутренняя ошибка сервера"
+// @router /v1/users/{id} [patch]
 func (h *handler) updateUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
@@ -156,6 +196,14 @@ func (h *handler) updateUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// @summary Удаление пользователя
+// @description Удаление пользователя по его идентификатору
+// @tags users
+// @param id path string true "Идентификатор пользователя"
+// @success 204 {string} string "Пользователь удален"
+// @failure 400 {string} string "Неверный запрос"
+// @failure 404 {string} string "Пользователь не найден"
+// @failure 500 {string} string "Внутренняя ошибка сервера"
 func (h *handler) deleteUser(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
